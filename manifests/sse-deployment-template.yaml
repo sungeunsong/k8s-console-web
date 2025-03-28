@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sse-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sse-service
+  template:
+    metadata:
+      labels:
+        app: sse-service
+    spec:
+      containers:
+        - name: sse-container
+          image: ghcr.io/YOUR_GITHUB_ID/sse-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mongo-sts-0.mongo-service:27017,mongo-sts-1.mongo-service:27017,mongo-sts-2.mongo-service:27017/testdb?replicaSet=rs0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sse-service-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: sse-service
+  ports:
+    - port: 80
+      targetPort: 8080
