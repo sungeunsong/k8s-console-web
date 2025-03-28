@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: sse-container
-          image: ghcr.io/YOUR_GITHUB_ID/sse-service:latest
+          image: ghcr.io/sungeunsong/sse-service:latest
           ports:
             - containerPort: 8080
           env:
