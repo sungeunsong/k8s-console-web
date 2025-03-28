@@ -1,2 +1,73 @@
----  # 생략: 기존 mongo-replicaset-template.yaml의 전체 내용이 들어가야 함
-(이전 캔버스에서 이미 작성한 내용 사용)
+---
+# 1. Headless Service for MongoDB (enables stable network identity)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  clusterIP: None
+  selector:
+    app: mongo
+  ports:
+    - name: mongodb
+      port: 27017
+
+---
+# 2. MongoDB ReplicaSet (3-node StatefulSet)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-sts
+spec:
+  serviceName: "mongo-service"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongodb
+          image: docker.io/mongo:6.0
+          ports:
+            - containerPort: 27017
+          command: ["mongod"]
+          args: ["--replSet", "rs0", "--bind_ip_all"]
+
+---
+# 3. Job to automatically initiate the ReplicaSet
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-init-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: mongo-init
+          image: docker.io/mongo:6.0
+          env:
+            - name: MY_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              sleep 10
+              mongosh "mongo-sts-0.mongo-service:27017" --eval '
+                rs.initiate({
+                  _id: "rs0",
+                  members: [
+                    { _id: 0, host: "mongo-sts-0.mongo-service:27017" },
+                    { _id: 1, host: "mongo-sts-1.mongo-service:27017" },
+                    { _id: 2, host: "mongo-sts-2.mongo-service:27017" }
+                  ]
+                });
+              '
+      restartPolicy: Never
+  backoffLimit: 1
