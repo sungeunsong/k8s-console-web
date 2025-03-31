@@ -1,4 +1,6 @@
 FROM node:18
+RUN apk add --no-cache curl bash tar gzip
+RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

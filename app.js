@@ -1,12 +1,15 @@
-// app.js - 콘솔웹 (ESM 스타일)
-
 import express from "express";
-import path from "path";
+import { execSync } from "child_process";
 import fs from "fs";
 import yaml from "js-yaml";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { KubeConfig, CoreV1Api, AppsV1Api, BatchV1Api } from "@kubernetes/client-node";
+import {
+  KubeConfig,
+  CoreV1Api,
+  AppsV1Api,
+  BatchV1Api,
+} from "@kubernetes/client-node";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,25 +42,39 @@ app.post("/create", async (req, res) => {
     // 네임스페이스 생성
     await coreApi.createNamespace({ metadata: { name: ns } });
 
-    // 템플릿 로드 및 네임스페이스 삽입
-    const mongoYaml = yaml.loadAll(fs.readFileSync("manifests/mongo-replicaset-template.yaml", "utf8"));
-    const sseYaml = yaml.loadAll(fs.readFileSync("manifests/sse-deployment-template.yaml", "utf8"));
-    const allResources = [...mongoYaml, ...sseYaml];
+    // 템플릿 로드 및 네임스페이스 삽입 (yaml 직접 적용 방식식)
+    // const mongoYaml = yaml.loadAll(fs.readFileSync("manifests/mongo-replicaset-template.yaml", "utf8"));
+    // const sseYaml = yaml.loadAll(fs.readFileSync("manifests/sse-deployment-template.yaml", "utf8"));
+    // const allResources = [...mongoYaml, ...sseYaml];
 
-    for (const doc of allResources) {
-      doc.metadata = doc.metadata || {};
-      doc.metadata.namespace = ns;
+    // for (const doc of allResources) {
+    //   doc.metadata = doc.metadata || {};
+    //   doc.metadata.namespace = ns;
 
-      if (doc.kind === "Service") await coreApi.createNamespacedService(ns, doc);
-      else if (doc.kind === "Deployment") await appsApi.createNamespacedDeployment(ns, doc);
-      else if (doc.kind === "StatefulSet") await appsApi.createNamespacedStatefulSet(ns, doc);
-      else if (doc.kind === "Job") await batchApi.createNamespacedJob(ns, doc);
-    }
+    //   if (doc.kind === "Service") await coreApi.createNamespacedService(ns, doc);
+    //   else if (doc.kind === "Deployment") await appsApi.createNamespacedDeployment(ns, doc);
+    //   else if (doc.kind === "StatefulSet") await appsApi.createNamespacedStatefulSet(ns, doc);
+    //   else if (doc.kind === "Job") await batchApi.createNamespacedJob(ns, doc);
+    // }
 
-    res.send(`<p>✅ ${ns} 네임스페이스에 MongoDB + SSE 서비스가 생성되었습니다.</p><a href="/">돌아가기</a>`);
+    // Helm Chart로 Mongo + SSE 배포
+    execSync(
+      `helm install ${ns}-mongo ./helm-charts/mongo-rs --namespace ${ns}`,
+      { stdio: "inherit" }
+    );
+    execSync(
+      `helm install ${ns}-sse ./helm-charts/sse-service --namespace ${ns}`,
+      { stdio: "inherit" }
+    );
+
+    res.send(
+      `<p>✅ ${ns} 네임스페이스에 MongoDB + SSE 서비스가 생성되었습니다.</p><a href="/">돌아가기</a>`
+    );
   } catch (err) {
     console.error(err);
-    res.status(500).send(`<p>에러 발생: ${err.message}</p><a href="/">돌아가기</a>`);
+    res
+      .status(500)
+      .send(`<p>에러 발생: ${err.message}</p><a href="/">돌아가기</a>`);
   }
 });
 
