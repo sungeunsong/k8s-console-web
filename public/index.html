@@ -1,13 +1,43 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>콘솔웹</title>
-</head>
-<body>
-  <h1>📦 SSE 환경 생성</h1>
-  <form method="POST" action="/create">
-    <button type="submit">새 환경 만들기</button>
-  </form>
-</body>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>콘솔웹 - Helm 배포 관리</title>
+  </head>
+  <body>
+    <h1>콘솔웹</h1>
+
+    <form method="POST" action="/create">
+      <button type="submit">* 새 환경 배포 (Mongo + SSE)</button>
+    </form>
+
+    <hr />
+
+    <h2>📋 배포된 환경 보기</h2>
+    <button onclick="loadReleases()">* 환경 목록 불러오기</button>
+    <ul id="release-list"></ul>
+
+    <script>
+      function loadReleases() {
+        fetch("/releases")
+          .then((res) => res.json())
+          .then((releases) => {
+            const ul = document.getElementById("release-list");
+            ul.innerHTML = ""; // 기존 내용 초기화
+            releases.forEach((r) => {
+              const li = document.createElement("li");
+              li.innerHTML = `
+              🔹 <strong>${r.name}</strong> (namespace: ${r.namespace}) – ${r.status}
+              <form method="POST" action="/delete" style="display:inline;">
+                <input type="hidden" name="name" value="${r.name}">
+                <input type="hidden" name="namespace" value="${r.namespace}">
+                <button type="submit">🗑️ 삭제</button>
+              </form>
+            `;
+              ul.appendChild(li);
+            });
+          });
+      }
+    </script>
+  </body>
 </html>

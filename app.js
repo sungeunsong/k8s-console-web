@@ -78,6 +78,42 @@ app.post("/create", async (req, res) => {
   }
 });
 
+app.get("/releases", (req, res) => {
+  try {
+    const output = execSync("helm list --all-namespaces -o json").toString();
+    const releases = JSON.parse(output);
+    res.json(releases);
+  } catch (err) {
+    console.error("❌ Helm 목록 조회 실패:", err);
+    res.status(500).json({ error: "Helm 릴리스 목록 조회 실패" });
+  }
+});
+
+app.post(
+  "/delete",
+  express.urlencoded({ extended: true }),
+  async (req, res) => {
+    const { name, namespace } = req.body;
+
+    try {
+      // Helm 릴리스 삭제
+      execSync(`helm uninstall ${name} -n ${namespace}`, { stdio: "inherit" });
+
+      // 네임스페이스 삭제
+      await coreApi.deleteNamespace(namespace);
+
+      res.send(
+        `<p>🗑️ ${name} (네임스페이스 ${namespace}) 삭제 완료</p><a href="/">돌아가기</a>`
+      );
+    } catch (err) {
+      console.error("❌ 삭제 실패:", err);
+      res
+        .status(500)
+        .send(`<p>에러 발생: ${err.message}</p><a href="/">돌아가기</a>`);
+    }
+  }
+);
+
 app.listen(port, () => {
   console.log(`✅ Console Web running on port ${port}`);
 });
