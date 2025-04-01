@@ -3,16 +3,15 @@ import { execSync } from "child_process";
 import fs from "fs";
 import yaml from "js-yaml";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { path, dirname, join } from "path";
 import {
   KubeConfig,
   CoreV1Api,
   AppsV1Api,
   BatchV1Api,
 } from "@kubernetes/client-node";
-
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
@@ -58,14 +57,15 @@ app.post("/create", async (req, res) => {
     // }
 
     // Helm Chart로 Mongo + SSE 배포
-    execSync(
-      `helm install ${ns}-mongo ./helm-charts/mongo-rs --namespace ${ns}`,
-      { stdio: "inherit" }
-    );
-    execSync(
-      `helm install ${ns}-sse ./helm-charts/sse-service --namespace ${ns}`,
-      { stdio: "inherit" }
-    );
+    const helmMongoPath = path.join(__dirname, "helm-charts", "mongo-rs");
+    const helmSsePath = path.join(__dirname, "helm-charts", "sse-service");
+
+    execSync(`helm install ${ns}-mongo ${helmMongoPath} --namespace ${ns}`, {
+      stdio: "inherit",
+    });
+    execSync(`helm install ${ns}-sse ${helmSsePath} --namespace ${ns}`, {
+      stdio: "inherit",
+    });
 
     res.send(
       `<p>✅ ${ns} 네임스페이스에 MongoDB + SSE 서비스가 생성되었습니다.</p><a href="/">돌아가기</a>`
