@@ -3,7 +3,7 @@ import { execSync } from "child_process";
 import fs from "fs";
 import yaml from "js-yaml";
 import { fileURLToPath } from "url";
-import { path, dirname, join } from "path";
+import path, { dirname, join } from "path";
 import {
   KubeConfig,
   CoreV1Api,
