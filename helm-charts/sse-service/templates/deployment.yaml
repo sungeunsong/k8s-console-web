@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sse-service
+  labels:
+    app: sse
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: sse
+  template:
+    metadata:
+      labels:
+        app: sse
+    spec:
+      containers:
+        - name: sse-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: MONGO_URI
+              value: "{{ .Values.env.mongoUri }}"
+

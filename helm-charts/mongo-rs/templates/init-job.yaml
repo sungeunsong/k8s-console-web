@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-init-job
+  labels:
+    app: mongo
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mongo-init
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command:
+            - sh
+            - -c
+            - |
+              sleep 10
+              mongosh --host mongo-sts-0.{{ .Values.service.name }}:{{ .Values.service.port }} <<EOF
+              rs.initiate({
+                _id: "{{ .Values.replicaSetName }}",
+                members: [
+                  { _id: 0, host: "mongo-sts-0.{{ .Values.service.name }}:27017" },
+                  { _id: 1, host: "mongo-sts-1.{{ .Values.service.name }}:27017" },
+                  { _id: 2, host: "mongo-sts-2.{{ .Values.service.name }}:27017" }
+                ]
+              })
+              EOF
+

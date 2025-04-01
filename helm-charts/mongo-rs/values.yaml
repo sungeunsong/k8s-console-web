@@ -1,0 +1,17 @@
+replicaCount: 3
+
+image:
+  repository: docker.io/mongo
+  tag: "6.0"
+  pullPolicy: IfNotPresent
+
+replicaSetName: rs0
+
+service:
+  name: mongo-service
+  port: 27017
+
+persistence:
+  enabled: false
+  size: 1Gi
+

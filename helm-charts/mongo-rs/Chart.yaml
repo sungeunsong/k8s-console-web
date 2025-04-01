@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mongo-rs
+description: A Helm chart for MongoDB ReplicaSet
+version: 0.1.0
+appVersion: "6.0"
+

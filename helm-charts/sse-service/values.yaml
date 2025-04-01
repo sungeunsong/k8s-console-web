@@ -1,0 +1,14 @@
+image:
+  repository: ghcr.io/sungeunsong/sse-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: LoadBalancer
+  port: 8080
+
+env:
+  mongoUri: "mongodb://mongo-sts-0.mongo-service:27017,mongo-sts-1.mongo-service:27017,mongo-sts-2.mongo-service:27017/testdb?replicaSet=rs0"
+
