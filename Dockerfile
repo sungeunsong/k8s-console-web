@@ -16,6 +16,8 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+COPY helm-charts/ ./helm-charts/        # Chart 디렉토리 복사 (명시적으로 추가)
+
 EXPOSE 3000
 
 CMD ["npm", "start"]
