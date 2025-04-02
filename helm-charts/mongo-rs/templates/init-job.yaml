@@ -18,7 +18,16 @@ spec:
             - sh
             - -c
             - |
-              sleep 10
+              # 각 Mongo 인스턴스가 응답할 때까지 대기
+              for i in 0 1 2; do
+                echo "Waiting for mongo-sts-$i to be ready..."
+                until mongosh --host mongo-sts-$i.{{ .Values.service.name }}:{{ .Values.service.port }} --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+                  sleep 3
+                done
+              done
+
+              echo "All MongoDB pods are ready. Initiating Replica Set..."
+
               mongosh --host mongo-sts-0.{{ .Values.service.name }}:{{ .Values.service.port }} <<EOF
               rs.initiate({
                 _id: "{{ .Values.replicaSetName }}",
@@ -29,4 +38,3 @@ spec:
                 ]
               })
               EOF
-
